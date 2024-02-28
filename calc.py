@@ -45,6 +45,3 @@ def calculator():
             error = str(e)
     
     return render_template_string(TEMPLATE, result=result, error=error)
-
-if __name__ == '__main__':
-    app.run(debug=True)
