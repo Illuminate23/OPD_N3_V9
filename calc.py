@@ -18,24 +18,33 @@ TEMPLATE = '''
         <input type="submit" value="Рассчитать">
     </form>
     {% if result %}
-    <h2>Итоговая сумма: {{ result }}</h2>
+    <h2 id="result">Итоговая сумма: {{ result }}</h2>
+    {% elif error %}
+    <h2 id="error">{{ error }}</h2>
     {% endif %}
 </body>
 </html>
 '''
 
 @app.route('/', methods=['GET', 'POST'])
-def compound_interest_calculator():
+def calculator():
     result = None
+    error = None
     if request.method == 'POST':
-        principal = float(request.form['principal'])
-        rate = float(request.form['rate']) / 100
-        time = float(request.form['time'])
-        times_per_year = int(request.form['times_per_year'])
-        
-        amount = principal * (1 + rate / times_per_year) ** (times_per_year * time)
-        
-        result = round(amount, 2)
-        
-    return render_template_string(TEMPLATE, result=result)
+        try:
+            principal = float(request.form['principal'])
+            rate = float(request.form['rate']) / 100
+            time = float(request.form['time'])
+            times_per_year = int(request.form['times_per_year'])
+            if principal < 0 or rate < 0 or time < 0 or times_per_year < 1:
+                raise ValueError("Все значения должны быть положительными, и частота начисления процента должна быть хотя бы 1.")
+            
+            amount = principal * (1 + rate / times_per_year) ** (times_per_year * time)
+            result = round(amount, 2)
+        except ValueError as e:
+            error = str(e)
+    
+    return render_template_string(TEMPLATE, result=result, error=error)
 
+if __name__ == '__main__':
+    app.run(debug=True)
