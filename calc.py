@@ -17,31 +17,44 @@ TEMPLATE = '''
         Частота начисления процента в году: <input type="number" name="times_per_year" value="1" required><br>
         <input type="submit" value="Рассчитать">
     </form>
-    {% if result %}
-    <h2 id="result">Итоговая сумма: {{ result }}</h2>
-    {% elif error %}
-    <h2 id="error">{{ error }}</h2>
+    {% if error_message is not none %}
+    <h2 style="color: red;" id="error_message">{{ error_message }}</h2>
+    {% endif %}
+    {% if result is not none %}
+    <h2 id="result" >Итоговая сумма: {{ result }}</h2>
     {% endif %}
 </body>
 </html>
 '''
 
+def is_number(s):
+    try:
+        float(s)  # для проверки, может ли строка быть преобразована в число
+        return True
+    except ValueError:
+        return False
+
 @app.route('/', methods=['GET', 'POST'])
 def calculator():
     result = None
-    error = None
+    error_message = None  # Добавление переменной для сообщения об ошибке
     if request.method == 'POST':
-        try:
+        principal = request.form['principal']
+        rate = request.form['rate']
+        time = request.form['time']
+        times_per_year = request.form['times_per_year']
+        if not (is_number(principal) and is_number(rate) and is_number(time) and is_number(times_per_year)):
+            error_message = "Пожалуйста, убедитесь, что все введенные значения являются числами." 
+        else:
             principal = float(request.form['principal'])
             rate = float(request.form['rate']) / 100
             time = float(request.form['time'])
             times_per_year = int(request.form['times_per_year'])
             if principal < 0 or rate < 0 or time < 0 or times_per_year < 1:
-                raise ValueError("Все значения должны быть положительными, и частота начисления процента должна быть хотя бы 1.")
-            
-            amount = principal * (1 + rate / times_per_year) ** (times_per_year * time)
-            result = round(amount, 2)
-        except ValueError as e:
-            error = str(e)
-    
-    return render_template_string(TEMPLATE, result=result, error=error)
+                error_message = "Все значения должны быть положительными, и частота начисления процента должна быть хотя бы 1."
+            else:
+                amount = principal * (1 + rate / times_per_year) ** (times_per_year * time)
+                result = round(amount, 2)
+
+    return render_template_string(TEMPLATE, result=result, error_message=error_message)
+
